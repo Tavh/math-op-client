@@ -8,9 +8,14 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Scanner;
 
-import static com.beachbumtask.constants.Commands.QUIT_COMMAND;
+import static com.beachbumtask.constants.ProtocolConstants.QUIT_COMMAND;
+import static com.beachbumtask.constants.ProtocolConstants.RESPONSE_END;
 
-public class MathOpClient {
+/**
+ * A math operation client class, an object of the class should be instantiated and then started
+ * in order to connect to the server
+ */
+public class MathOperationClient {
 
     private final Scanner localInput = new Scanner(System.in);
     private boolean isRunning = true;
@@ -18,10 +23,12 @@ public class MathOpClient {
     private PrintWriter serverOutput;
     private BufferedReader serverInput;
 
-
-    public void start() {
+    /**
+    * Starts a MathOperationClient, establishes the connection and the i/o methods with the server
+    */
+    public void start(int port) {
         try {
-            socket = new Socket("localhost", 10000);
+            socket = new Socket("localhost", port);
             serverOutput = new PrintWriter(socket.getOutputStream());
             serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             isRunning = true;
@@ -34,6 +41,11 @@ public class MathOpClient {
         }
     }
 
+    /**
+     * The main loop of the client, keeps getting input from the user and received responses from the server
+     * NOTE: Since a command line waits for input from the user, server-responses cannot be sent until
+     *       input is given, or else the input field will be overridden
+     */
     private void eventLoop() throws IOException {
         while (isRunning) {
             System.out.print("Please enter your command... ");
@@ -59,15 +71,22 @@ public class MathOpClient {
         isRunning = false;
     }
 
+    /**
+     * Handles responses from the server, waits for the indicator '<END>' to signify the response end
+     */
     private void handleResponse() throws IOException{
         String line;
-        while(!(line = serverInput.readLine()).equals("<END>")) {
+        while(!(line = serverInput.readLine()).equals(RESPONSE_END)) {
             System.out.println(line);
         }
     }
 
+    /**
+     * Sends requests to the server, there is no need for an indicator to be sent as the server
+     * handles all the requests from the client ASAP
+     */
     private void callServer(String s) {
-        serverOutput.println(s + "\n\r");
+        serverOutput.println(s);
         serverOutput.flush();
     }
 }
