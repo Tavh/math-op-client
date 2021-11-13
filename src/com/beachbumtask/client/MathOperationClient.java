@@ -1,15 +1,12 @@
 package com.beachbumtask.client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Scanner;
 
-import static com.beachbumtask.constants.ProtocolConstants.QUIT_COMMAND;
-import static com.beachbumtask.constants.ProtocolConstants.RESPONSE_END;
+import static com.beachbumtask.constants.ProtocolConstants.*;
 
 /**
  * A math operation client class, an object of the class should be instantiated and then started
@@ -19,9 +16,10 @@ public class MathOperationClient {
 
     private final Scanner localInput = new Scanner(System.in);
     private boolean isRunning = true;
+    private boolean isWaitingForResponse = false;
     private Socket socket;
     private PrintWriter serverOutput;
-    private BufferedReader serverInput;
+    private final MathClientIOMediator ioMediator = new MathClientIOMediator(this);
 
     /**
     * Starts a MathOperationClient, establishes the connection and the i/o methods with the server
@@ -30,7 +28,8 @@ public class MathOperationClient {
         try {
             socket = new Socket("localhost", port);
             serverOutput = new PrintWriter(socket.getOutputStream());
-            serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            ServerListeningThread serverListeningThread = new ServerListeningThread(socket.getInputStream(), ioMediator);
+            serverListeningThread.start();
             isRunning = true;
             init();
             eventLoop();
@@ -48,13 +47,14 @@ public class MathOperationClient {
      */
     private void eventLoop() throws IOException {
         while (isRunning) {
-            System.out.print("Please enter your command... ");
-            final String command = localInput.nextLine();
-            callServer(command);
-            if (QUIT_COMMAND.equals(command)) {
-                quit();
-            } else {
-                handleResponse();
+            if (!isWaitingForResponse) {
+                System.out.print("Please enter your command... ");
+                final String command = localInput.nextLine();
+                isWaitingForResponse = true;
+                callServer(command);
+                if (QUIT_COMMAND.equals(command)) {
+                    quit();
+                }
             }
         }
     }
@@ -66,19 +66,13 @@ public class MathOperationClient {
     }
 
 
+    public void proceedToNextPrompt() {
+        this.isWaitingForResponse = false;
+    }
+
     private void quit() {
         System.out.println("Good bye!");
         isRunning = false;
-    }
-
-    /**
-     * Handles responses from the server, waits for the indicator '<END>' to signify the response end
-     */
-    private void handleResponse() throws IOException{
-        String line;
-        while(!(line = serverInput.readLine()).equals(RESPONSE_END)) {
-            System.out.println(line);
-        }
     }
 
     /**
