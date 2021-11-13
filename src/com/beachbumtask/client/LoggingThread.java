@@ -1,18 +1,21 @@
 package com.beachbumtask.client;
 
 import java.io.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 import static com.beachbumtask.constants.ProtocolConstants.INFO_INDICATOR;
-import static com.beachbumtask.constants.ProtocolConstants.RESPONSE_END;
+import static com.beachbumtask.constants.ProtocolConstants.RESPONSE_END_INDICATOR;
 
 public class LoggingThread extends Thread {
 
     private final BufferedReader serverInput;
     private BufferedWriter writer;
+    private final MathClientIOMediator ioMediator;
 
-
-    public LoggingThread (BufferedReader serverInput) {
-        this.serverInput = serverInput;
+    public LoggingThread (InputStream inputStream, MathClientIOMediator ioMediator) {
+        this.ioMediator = ioMediator;
+        this.serverInput = new BufferedReader(new InputStreamReader(inputStream));
         File logsDir = new File("logs");
         logsDir.mkdir();
         try {
@@ -33,14 +36,26 @@ public class LoggingThread extends Thread {
         handleResponse();
     }
 
+    /**
+     * Handles responses from the server, waits for the indicator '<END>' to signify the response end
+     */
     private void handleResponse() {
         String line;
         try {
-            while(!(line = serverInput.readLine()).equals(RESPONSE_END)) {
-                if (line.contains(INFO_INDICATOR)) {
-                    writer.write(line);
-                    writer.flush();
+            while(true) {
+                line = serverInput.readLine();
+                if (!line.equals(RESPONSE_END_INDICATOR)) {
+                    if (line.contains(INFO_INDICATOR)) {
+                        writer.write(
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH:mm:ss")) + " " + line + "\n"
+                        );
+                        writer.flush();
+                    } else {
+                        System.out.println(line);
+                        ioMediator.notifyMathClient();
+                    }
                 }
+                writer.flush();
             }
         } catch (IOException e) {
             e.printStackTrace();
