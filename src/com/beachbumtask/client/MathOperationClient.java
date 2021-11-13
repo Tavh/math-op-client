@@ -8,8 +8,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.Scanner;
 
-import static com.beachbumtask.constants.ProtocolConstants.QUIT_COMMAND;
-import static com.beachbumtask.constants.ProtocolConstants.RESPONSE_END;
+import static com.beachbumtask.constants.ProtocolConstants.*;
 
 /**
  * A math operation client class, an object of the class should be instantiated and then started
@@ -31,6 +30,8 @@ public class MathOperationClient {
             socket = new Socket("localhost", port);
             serverOutput = new PrintWriter(socket.getOutputStream());
             serverInput = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//            LoggingThread loggingThread = new LoggingThread(serverInput);
+//            loggingThread.start();
             isRunning = true;
             init();
             eventLoop();
@@ -77,7 +78,9 @@ public class MathOperationClient {
     private void handleResponse() throws IOException{
         String line;
         while(!(line = serverInput.readLine()).equals(RESPONSE_END)) {
-            System.out.println(line);
+            if (!line.contains(INFO_INDICATOR)) {
+                System.out.println(line);
+            }
         }
     }
 
