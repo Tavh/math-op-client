@@ -20,6 +20,7 @@ public class MathOperationClient {
     private Socket socket;
     private PrintWriter serverOutput;
     private final MathClientIOMediator ioMediator = new MathClientIOMediator(this);
+    private ServerListeningThread serverListeningThread;
 
     /**
     * Starts a MathOperationClient, establishes the connection and the i/o methods with the server
@@ -28,7 +29,7 @@ public class MathOperationClient {
         try {
             socket = new Socket("localhost", port);
             serverOutput = new PrintWriter(socket.getOutputStream());
-            ServerListeningThread serverListeningThread = new ServerListeningThread(socket.getInputStream(), ioMediator);
+            serverListeningThread = new ServerListeningThread(socket.getInputStream(), ioMediator);
             serverListeningThread.start();
             isRunning = true;
             init();
@@ -72,6 +73,7 @@ public class MathOperationClient {
 
     private void quit() {
         System.out.println("Good bye!");
+        serverListeningThread.interrupt();
         isRunning = false;
     }
 
