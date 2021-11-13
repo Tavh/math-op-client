@@ -7,13 +7,16 @@ import java.time.format.DateTimeFormatter;
 import static com.beachbumtask.constants.ProtocolConstants.INFO_INDICATOR;
 import static com.beachbumtask.constants.ProtocolConstants.RESPONSE_END_INDICATOR;
 
-public class LoggingThread extends Thread {
+/**
+ * A thread listening to all input from the server, logs INFO messages and writes responses to console
+ */
+public class ServerListeningThread extends Thread {
 
     private final BufferedReader serverInput;
     private BufferedWriter writer;
     private final MathClientIOMediator ioMediator;
 
-    public LoggingThread (InputStream inputStream, MathClientIOMediator ioMediator) {
+    public ServerListeningThread(InputStream inputStream, MathClientIOMediator ioMediator) {
         this.ioMediator = ioMediator;
         this.serverInput = new BufferedReader(new InputStreamReader(inputStream));
         File logsDir = new File("logs");
@@ -33,13 +36,13 @@ public class LoggingThread extends Thread {
     }
 
     private void eventLoop() {
-        handleResponse();
+        handleServerMessage();
     }
 
     /**
      * Handles responses from the server, waits for the indicator '<END>' to signify the response end
      */
-    private void handleResponse() {
+    private void handleServerMessage() {
         String line;
         try {
             while(true) {
@@ -47,7 +50,8 @@ public class LoggingThread extends Thread {
                 if (!line.equals(RESPONSE_END_INDICATOR)) {
                     if (line.contains(INFO_INDICATOR)) {
                         writer.write(
-                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH:mm:ss")) + " " + line + "\n"
+                                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH:mm:ss"))
+                                        + " " + line + "\n"
                         );
                         writer.flush();
                     } else {

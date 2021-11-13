@@ -28,8 +28,8 @@ public class MathOperationClient {
         try {
             socket = new Socket("localhost", port);
             serverOutput = new PrintWriter(socket.getOutputStream());
-            LoggingThread loggingThread = new LoggingThread(socket.getInputStream(), ioMediator);
-            loggingThread.start();
+            ServerListeningThread serverListeningThread = new ServerListeningThread(socket.getInputStream(), ioMediator);
+            serverListeningThread.start();
             isRunning = true;
             init();
             eventLoop();
